@@ -1,0 +1,14 @@
+Title: Credits of genpw
+Creation Date: 2009-08-27
+Last Update: 2011-04-06
+Author: Andreas Haerter <development [ät] andreas-haerter.com>
+Web: <http://andreas-haerter.com/projects/genpw>
+
+
+This file lists contributors and contributions to the genpw passwort manager.
+
+ * Paul Johnston <http://pajhome.org.uk>
+   Paul "Paj" Johnston released the impressing SHA512 JS- library (see
+   <http://pajhome.org.uk/crypt/md5/sha512.html> for details), one of the most
+   important parts of "genpw". Thank you for this!
+

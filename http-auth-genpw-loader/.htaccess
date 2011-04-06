@@ -1,0 +1,4 @@
+<FilesMatch "^(ChangeLog|COPYING|CREDITS|VERSION|genpw\.html)$">
+  Order Deny,Allow
+  Deny from all
+</FilesMatch>

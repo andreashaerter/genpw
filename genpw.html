@@ -1,0 +1,1953 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+	<!--
+	/**
+	 * Simple password manager, based on a master password and patterns
+	 *
+	 * This file is a lightweight alternative to password managers/safes
+	 * like KeePass, Clipperz, LastPass and others. The core of all operations
+	 * is pure JavaScript, the whole generation will be done *locally* within
+	 * your browser. No password data will be submitted over the network. No
+	 * generated data will be stored.
+	 *
+	 * NOTE: You have to set a personal salt value before you can use this
+	 *       script. See http://andreas-haerter.com/projects/genpw and/or
+	 *       the README for installation and usage instructions.
+	 *
+	 * This program is using a SHA-512 implementation by Paul Johnston,
+	 * distributed under the BSD License.
+	 *
+	 * LICENSE: This file is open source software (OSS) and may be copied under
+	 *          certain conditions. See COPYING file for details or try to
+	 *          contact the author(s) of this file in doubt.
+	 *
+	 * @version 2011-04-06
+	 * @license New/3-clause BSD (http://opensource.org/licenses/bsd-license.php)
+	 * @author Andreas Haerter <development@andreas-haerter.com>
+	 * @link http://andreas-haerter.com/projects/genpw
+	 * @link http://pajhome.org.uk/crypt/md5/sha512.html
+	 */
+	-->
+
+	<!-- I'm sure: nobody wants to see his generator accidentally listed on Google... -->
+	<meta name="allow-search" content="no" />
+	<meta name="audience" content="noone" />
+	<meta name="audience" content="no" />
+	<meta name="robots" content="noindex,nofollow,noarchive" />
+	<meta name="MSSmartTagsPreventParsing" content="true" />
+	<meta name="description" content="" />
+	<meta name="keywords" content="" />
+
+	<!-- no title: we are living in times of "intelligent" browser address bars
+	     and not everybody using the browser should "find" this generator while
+	     typing - let the filename/domain decide the behaviour. -->
+	<title></title>
+
+	<style type="text/css">
+		/* maintags */
+		body {
+			background-color: #fff;
+		}
+		font, td, body, p, div, select {
+			font-family: Verdana,Arial,Helvetica,Sans-Serif;
+			color: #202020;
+			font-size: 12px;
+			line-height: 16px;
+			text-decoration: none;
+		}
+		/* main form layout */
+		form {
+			margin: 50px 15px 15px 15px;
+		}
+		form table {
+			border: 0px;
+			width: 510px;
+		}
+		form table td {
+			background-color: #e9e9e9;
+		}
+		form table td.headline {
+			font-weight: bold;
+		}
+		form table td.left-col {
+			text-align: left;
+			width: 210px;
+			font-weight: bold;
+			padding-left: 10px;
+		}
+		form table td.right-col {
+			text-align: left;
+		}
+		form table td.colspan {
+			text-align: center;
+		}
+		/* input tags */
+		input, textarea {
+			font-family: "Courier New",Courier;
+			color: #202020;
+			font-size: 12px;
+			line-height: 16px;
+		}
+		/* links */
+		a:link, a:visited {
+			font-family: Verdana,Arial,Helvetica,Sans-Serif;
+			font-weight: normal;
+			color: #373c76;
+			text-decoration: underline;
+		}
+		a:hover {
+			font-family: Verdana,Arial,Helvetica,Sans-Serif;
+			font-weight: normal;
+			color: #000;
+			text-decoration: none;
+		}
+		/* classes */
+		.msg-err {
+			color: #f00;
+			font-weight: bold;
+		}
+		.msg-success {
+			color: #3c0;
+			font-weight: bold;
+		};
+	</style>
+
+	<script type="text/javascript">
+	/* <![CDATA[ */
+		/******************************************************************************/
+		/* SHA-512 implementation from sha512.js distributed under the BSD License
+		/* See <http://pajhome.org.uk/crypt/md5/sha512.html> for details.
+		/******************************************************************************/
+		/* BEGIN COPY & PASTE
+		/******************************************************************************/
+
+		/**
+		 * A JavaScript implementation of the Secure Hash Algorithm, SHA-512, as defined
+		 * in FIPS 180-2
+		 * Version 2.2 Copyright Anonymous Contributor, Paul Johnston 2000 - 2009.
+		 * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+		 * Distributed under the BSD License
+		 * See http://pajhome.org.uk/crypt/md5 for details.
+		 */
+
+		/*
+		 * Configurable variables. You may need to tweak these to be compatible with
+		 * the server-side, but the defaults work in most cases.
+		 */
+		var hexcase = 0;  /* hex output format. 0 - lowercase; 1 - uppercase        */
+		var b64pad  = ""; /* base-64 pad character. "=" for strict RFC compliance   */
+
+		/*
+		 * These are the functions you'll usually want to call
+		 * They take string arguments and return either hex or base-64 encoded strings
+		 */
+		function hex_sha512(s)    { return rstr2hex(rstr_sha512(str2rstr_utf8(s))); }
+		function b64_sha512(s)    { return rstr2b64(rstr_sha512(str2rstr_utf8(s))); }
+		function any_sha512(s, e) { return rstr2any(rstr_sha512(str2rstr_utf8(s)), e);}
+		function hex_hmac_sha512(k, d)
+		  { return rstr2hex(rstr_hmac_sha512(str2rstr_utf8(k), str2rstr_utf8(d))); }
+		function b64_hmac_sha512(k, d)
+		  { return rstr2b64(rstr_hmac_sha512(str2rstr_utf8(k), str2rstr_utf8(d))); }
+		function any_hmac_sha512(k, d, e)
+		  { return rstr2any(rstr_hmac_sha512(str2rstr_utf8(k), str2rstr_utf8(d)), e);}
+
+		/*
+		 * Perform a simple self-test to see if the VM is working
+		 */
+		function sha512_vm_test()
+		{
+		  return hex_sha512("abc").toLowerCase() ==
+		    "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a" +
+		    "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f";
+		}
+
+		/*
+		 * Calculate the SHA-512 of a raw string
+		 */
+		function rstr_sha512(s)
+		{
+		  return binb2rstr(binb_sha512(rstr2binb(s), s.length * 8));
+		}
+
+		/*
+		 * Calculate the HMAC-SHA-512 of a key and some data (raw strings)
+		 */
+		function rstr_hmac_sha512(key, data)
+		{
+		  var bkey = rstr2binb(key);
+		  if(bkey.length > 32) bkey = binb_sha512(bkey, key.length * 8);
+
+		  var ipad = Array(32), opad = Array(32);
+		  for(var i = 0; i < 32; i++)
+		  {
+		    ipad[i] = bkey[i] ^ 0x36363636;
+		    opad[i] = bkey[i] ^ 0x5C5C5C5C;
+		  }
+
+		  var hash = binb_sha512(ipad.concat(rstr2binb(data)), 1024 + data.length * 8);
+		  return binb2rstr(binb_sha512(opad.concat(hash), 1024 + 512));
+		}
+
+		/*
+		 * Convert a raw string to a hex string
+		 */
+		function rstr2hex(input)
+		{
+		  try { hexcase } catch(e) { hexcase=0; }
+		  var hex_tab = hexcase ? "0123456789ABCDEF" : "0123456789abcdef";
+		  var output = "";
+		  var x;
+		  for(var i = 0; i < input.length; i++)
+		  {
+		    x = input.charCodeAt(i);
+		    output += hex_tab.charAt((x >>> 4) & 0x0F)
+		           +  hex_tab.charAt( x        & 0x0F);
+		  }
+		  return output;
+		}
+
+		/*
+		 * Convert a raw string to a base-64 string
+		 */
+		function rstr2b64(input)
+		{
+		  try { b64pad } catch(e) { b64pad=''; }
+		  var tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+		  var output = "";
+		  var len = input.length;
+		  for(var i = 0; i < len; i += 3)
+		  {
+		    var triplet = (input.charCodeAt(i) << 16)
+		                | (i + 1 < len ? input.charCodeAt(i+1) << 8 : 0)
+		                | (i + 2 < len ? input.charCodeAt(i+2)      : 0);
+		    for(var j = 0; j < 4; j++)
+		    {
+		      if(i * 8 + j * 6 > input.length * 8) output += b64pad;
+		      else output += tab.charAt((triplet >>> 6*(3-j)) & 0x3F);
+		    }
+		  }
+		  return output;
+		}
+
+		/*
+		 * Convert a raw string to an arbitrary string encoding
+		 */
+		function rstr2any(input, encoding)
+		{
+		  var divisor = encoding.length;
+		  var i, j, q, x, quotient;
+
+		  /* Convert to an array of 16-bit big-endian values, forming the dividend */
+		  var dividend = Array(Math.ceil(input.length / 2));
+		  for(i = 0; i < dividend.length; i++)
+		  {
+		    dividend[i] = (input.charCodeAt(i * 2) << 8) | input.charCodeAt(i * 2 + 1);
+		  }
+
+		  /*
+		   * Repeatedly perform a long division. The binary array forms the dividend,
+		   * the length of the encoding is the divisor. Once computed, the quotient
+		   * forms the dividend for the next step. All remainders are stored for later
+		   * use.
+		   */
+		  var full_length = Math.ceil(input.length * 8 /
+		                                    (Math.log(encoding.length) / Math.log(2)));
+		  var remainders = Array(full_length);
+		  for(j = 0; j < full_length; j++)
+		  {
+		    quotient = Array();
+		    x = 0;
+		    for(i = 0; i < dividend.length; i++)
+		    {
+		      x = (x << 16) + dividend[i];
+		      q = Math.floor(x / divisor);
+		      x -= q * divisor;
+		      if(quotient.length > 0 || q > 0)
+		        quotient[quotient.length] = q;
+		    }
+		    remainders[j] = x;
+		    dividend = quotient;
+		  }
+
+		  /* Convert the remainders to the output string */
+		  var output = "";
+		  for(i = remainders.length - 1; i >= 0; i--)
+		    output += encoding.charAt(remainders[i]);
+
+		  return output;
+		}
+
+		/*
+		 * Encode a string as utf-8.
+		 * For efficiency, this assumes the input is valid utf-16.
+		 */
+		function str2rstr_utf8(input)
+		{
+		  var output = "";
+		  var i = -1;
+		  var x, y;
+
+		  while(++i < input.length)
+		  {
+		    /* Decode utf-16 surrogate pairs */
+		    x = input.charCodeAt(i);
+		    y = i + 1 < input.length ? input.charCodeAt(i + 1) : 0;
+		    if(0xD800 <= x && x <= 0xDBFF && 0xDC00 <= y && y <= 0xDFFF)
+		    {
+		      x = 0x10000 + ((x & 0x03FF) << 10) + (y & 0x03FF);
+		      i++;
+		    }
+
+		    /* Encode output as utf-8 */
+		    if(x <= 0x7F)
+		      output += String.fromCharCode(x);
+		    else if(x <= 0x7FF)
+		      output += String.fromCharCode(0xC0 | ((x >>> 6 ) & 0x1F),
+		                                    0x80 | ( x         & 0x3F));
+		    else if(x <= 0xFFFF)
+		      output += String.fromCharCode(0xE0 | ((x >>> 12) & 0x0F),
+		                                    0x80 | ((x >>> 6 ) & 0x3F),
+		                                    0x80 | ( x         & 0x3F));
+		    else if(x <= 0x1FFFFF)
+		      output += String.fromCharCode(0xF0 | ((x >>> 18) & 0x07),
+		                                    0x80 | ((x >>> 12) & 0x3F),
+		                                    0x80 | ((x >>> 6 ) & 0x3F),
+		                                    0x80 | ( x         & 0x3F));
+		  }
+		  return output;
+		}
+
+		/*
+		 * Encode a string as utf-16
+		 */
+		function str2rstr_utf16le(input)
+		{
+		  var output = "";
+		  for(var i = 0; i < input.length; i++)
+		    output += String.fromCharCode( input.charCodeAt(i)        & 0xFF,
+		                                  (input.charCodeAt(i) >>> 8) & 0xFF);
+		  return output;
+		}
+
+		function str2rstr_utf16be(input)
+		{
+		  var output = "";
+		  for(var i = 0; i < input.length; i++)
+		    output += String.fromCharCode((input.charCodeAt(i) >>> 8) & 0xFF,
+		                                   input.charCodeAt(i)        & 0xFF);
+		  return output;
+		}
+
+		/*
+		 * Convert a raw string to an array of big-endian words
+		 * Characters >255 have their high-byte silently ignored.
+		 */
+		function rstr2binb(input)
+		{
+		  var output = Array(input.length >> 2);
+		  for(var i = 0; i < output.length; i++)
+		    output[i] = 0;
+		  for(var i = 0; i < input.length * 8; i += 8)
+		    output[i>>5] |= (input.charCodeAt(i / 8) & 0xFF) << (24 - i % 32);
+		  return output;
+		}
+
+		/*
+		 * Convert an array of big-endian words to a string
+		 */
+		function binb2rstr(input)
+		{
+		  var output = "";
+		  for(var i = 0; i < input.length * 32; i += 8)
+		    output += String.fromCharCode((input[i>>5] >>> (24 - i % 32)) & 0xFF);
+		  return output;
+		}
+
+		/*
+		 * Calculate the SHA-512 of an array of big-endian dwords, and a bit length
+		 */
+		var sha512_k;
+		function binb_sha512(x, len)
+		{
+		  if(sha512_k == undefined)
+		  {
+		    //SHA512 constants
+		    sha512_k = new Array(
+		new int64(0x428a2f98, -685199838), new int64(0x71374491, 0x23ef65cd),
+		new int64(-1245643825, -330482897), new int64(-373957723, -2121671748),
+		new int64(0x3956c25b, -213338824), new int64(0x59f111f1, -1241133031),
+		new int64(-1841331548, -1357295717), new int64(-1424204075, -630357736),
+		new int64(-670586216, -1560083902), new int64(0x12835b01, 0x45706fbe),
+		new int64(0x243185be, 0x4ee4b28c), new int64(0x550c7dc3, -704662302),
+		new int64(0x72be5d74, -226784913), new int64(-2132889090, 0x3b1696b1),
+		new int64(-1680079193, 0x25c71235), new int64(-1046744716, -815192428),
+		new int64(-459576895, -1628353838), new int64(-272742522, 0x384f25e3),
+		new int64(0xfc19dc6, -1953704523), new int64(0x240ca1cc, 0x77ac9c65),
+		new int64(0x2de92c6f, 0x592b0275), new int64(0x4a7484aa, 0x6ea6e483),
+		new int64(0x5cb0a9dc, -1119749164), new int64(0x76f988da, -2096016459),
+		new int64(-1740746414, -295247957), new int64(-1473132947, 0x2db43210),
+		new int64(-1341970488, -1728372417), new int64(-1084653625, -1091629340),
+		new int64(-958395405, 0x3da88fc2), new int64(-710438585, -1828018395),
+		new int64(0x6ca6351, -536640913), new int64(0x14292967, 0xa0e6e70),
+		new int64(0x27b70a85, 0x46d22ffc), new int64(0x2e1b2138, 0x5c26c926),
+		new int64(0x4d2c6dfc, 0x5ac42aed), new int64(0x53380d13, -1651133473),
+		new int64(0x650a7354, -1951439906), new int64(0x766a0abb, 0x3c77b2a8),
+		new int64(-2117940946, 0x47edaee6), new int64(-1838011259, 0x1482353b),
+		new int64(-1564481375, 0x4cf10364), new int64(-1474664885, -1136513023),
+		new int64(-1035236496, -789014639), new int64(-949202525, 0x654be30),
+		new int64(-778901479, -688958952), new int64(-694614492, 0x5565a910),
+		new int64(-200395387, 0x5771202a), new int64(0x106aa070, 0x32bbd1b8),
+		new int64(0x19a4c116, -1194143544), new int64(0x1e376c08, 0x5141ab53),
+		new int64(0x2748774c, -544281703), new int64(0x34b0bcb5, -509917016),
+		new int64(0x391c0cb3, -976659869), new int64(0x4ed8aa4a, -482243893),
+		new int64(0x5b9cca4f, 0x7763e373), new int64(0x682e6ff3, -692930397),
+		new int64(0x748f82ee, 0x5defb2fc), new int64(0x78a5636f, 0x43172f60),
+		new int64(-2067236844, -1578062990), new int64(-1933114872, 0x1a6439ec),
+		new int64(-1866530822, 0x23631e28), new int64(-1538233109, -561857047),
+		new int64(-1090935817, -1295615723), new int64(-965641998, -479046869),
+		new int64(-903397682, -366583396), new int64(-779700025, 0x21c0c207),
+		new int64(-354779690, -840897762), new int64(-176337025, -294727304),
+		new int64(0x6f067aa, 0x72176fba), new int64(0xa637dc5, -1563912026),
+		new int64(0x113f9804, -1090974290), new int64(0x1b710b35, 0x131c471b),
+		new int64(0x28db77f5, 0x23047d84), new int64(0x32caab7b, 0x40c72493),
+		new int64(0x3c9ebe0a, 0x15c9bebc), new int64(0x431d67c4, -1676669620),
+		new int64(0x4cc5d4be, -885112138), new int64(0x597f299c, -60457430),
+		new int64(0x5fcb6fab, 0x3ad6faec), new int64(0x6c44198c, 0x4a475817));
+		  }
+
+		  //Initial hash values
+		  var H = new Array(
+		new int64(0x6a09e667, -205731576),
+		new int64(-1150833019, -2067093701),
+		new int64(0x3c6ef372, -23791573),
+		new int64(-1521486534, 0x5f1d36f1),
+		new int64(0x510e527f, -1377402159),
+		new int64(-1694144372, 0x2b3e6c1f),
+		new int64(0x1f83d9ab, -79577749),
+		new int64(0x5be0cd19, 0x137e2179));
+
+		  var T1 = new int64(0, 0),
+		    T2 = new int64(0, 0),
+		    a = new int64(0,0),
+		    b = new int64(0,0),
+		    c = new int64(0,0),
+		    d = new int64(0,0),
+		    e = new int64(0,0),
+		    f = new int64(0,0),
+		    g = new int64(0,0),
+		    h = new int64(0,0),
+		    //Temporary variables not specified by the document
+		    s0 = new int64(0, 0),
+		    s1 = new int64(0, 0),
+		    Ch = new int64(0, 0),
+		    Maj = new int64(0, 0),
+		    r1 = new int64(0, 0),
+		    r2 = new int64(0, 0),
+		    r3 = new int64(0, 0);
+		  var j, i;
+		  var W = new Array(80);
+		  for(i=0; i<80; i++)
+		    W[i] = new int64(0, 0);
+
+		  // append padding to the source string. The format is described in the FIPS.
+		  x[len >> 5] |= 0x80 << (24 - (len & 0x1f));
+		  x[((len + 128 >> 10)<< 5) + 31] = len;
+
+		  for(i = 0; i<x.length; i+=32) //32 dwords is the block size
+		  {
+		    int64copy(a, H[0]);
+		    int64copy(b, H[1]);
+		    int64copy(c, H[2]);
+		    int64copy(d, H[3]);
+		    int64copy(e, H[4]);
+		    int64copy(f, H[5]);
+		    int64copy(g, H[6]);
+		    int64copy(h, H[7]);
+
+		    for(j=0; j<16; j++)
+		    {
+		        W[j].h = x[i + 2*j];
+		        W[j].l = x[i + 2*j + 1];
+		    }
+
+		    for(j=16; j<80; j++)
+		    {
+		      //sigma1
+		      int64rrot(r1, W[j-2], 19);
+		      int64revrrot(r2, W[j-2], 29);
+		      int64shr(r3, W[j-2], 6);
+		      s1.l = r1.l ^ r2.l ^ r3.l;
+		      s1.h = r1.h ^ r2.h ^ r3.h;
+		      //sigma0
+		      int64rrot(r1, W[j-15], 1);
+		      int64rrot(r2, W[j-15], 8);
+		      int64shr(r3, W[j-15], 7);
+		      s0.l = r1.l ^ r2.l ^ r3.l;
+		      s0.h = r1.h ^ r2.h ^ r3.h;
+
+		      int64add4(W[j], s1, W[j-7], s0, W[j-16]);
+		    }
+
+		    for(j = 0; j < 80; j++)
+		    {
+		      //Ch
+		      Ch.l = (e.l & f.l) ^ (~e.l & g.l);
+		      Ch.h = (e.h & f.h) ^ (~e.h & g.h);
+
+		      //Sigma1
+		      int64rrot(r1, e, 14);
+		      int64rrot(r2, e, 18);
+		      int64revrrot(r3, e, 9);
+		      s1.l = r1.l ^ r2.l ^ r3.l;
+		      s1.h = r1.h ^ r2.h ^ r3.h;
+
+		      //Sigma0
+		      int64rrot(r1, a, 28);
+		      int64revrrot(r2, a, 2);
+		      int64revrrot(r3, a, 7);
+		      s0.l = r1.l ^ r2.l ^ r3.l;
+		      s0.h = r1.h ^ r2.h ^ r3.h;
+
+		      //Maj
+		      Maj.l = (a.l & b.l) ^ (a.l & c.l) ^ (b.l & c.l);
+		      Maj.h = (a.h & b.h) ^ (a.h & c.h) ^ (b.h & c.h);
+
+		      int64add5(T1, h, s1, Ch, sha512_k[j], W[j]);
+		      int64add(T2, s0, Maj);
+
+		      int64copy(h, g);
+		      int64copy(g, f);
+		      int64copy(f, e);
+		      int64add(e, d, T1);
+		      int64copy(d, c);
+		      int64copy(c, b);
+		      int64copy(b, a);
+		      int64add(a, T1, T2);
+		    }
+		    int64add(H[0], H[0], a);
+		    int64add(H[1], H[1], b);
+		    int64add(H[2], H[2], c);
+		    int64add(H[3], H[3], d);
+		    int64add(H[4], H[4], e);
+		    int64add(H[5], H[5], f);
+		    int64add(H[6], H[6], g);
+		    int64add(H[7], H[7], h);
+		  }
+
+		  //represent the hash as an array of 32-bit dwords
+		  var hash = new Array(16);
+		  for(i=0; i<8; i++)
+		  {
+		    hash[2*i] = H[i].h;
+		    hash[2*i + 1] = H[i].l;
+		  }
+		  return hash;
+		}
+
+		//A constructor for 64-bit numbers
+		function int64(h, l)
+		{
+		  this.h = h;
+		  this.l = l;
+		  //this.toString = int64toString;
+		}
+
+		//Copies src into dst, assuming both are 64-bit numbers
+		function int64copy(dst, src)
+		{
+		  dst.h = src.h;
+		  dst.l = src.l;
+		}
+
+		//Right-rotates a 64-bit number by shift
+		//Won't handle cases of shift>=32
+		//The function revrrot() is for that
+		function int64rrot(dst, x, shift)
+		{
+		    dst.l = (x.l >>> shift) | (x.h << (32-shift));
+		    dst.h = (x.h >>> shift) | (x.l << (32-shift));
+		}
+
+		//Reverses the dwords of the source and then rotates right by shift.
+		//This is equivalent to rotation by 32+shift
+		function int64revrrot(dst, x, shift)
+		{
+		    dst.l = (x.h >>> shift) | (x.l << (32-shift));
+		    dst.h = (x.l >>> shift) | (x.h << (32-shift));
+		}
+
+		//Bitwise-shifts right a 64-bit number by shift
+		//Won't handle shift>=32, but position never needed in SHA512
+		function int64shr(dst, x, shift)
+		{
+		    dst.l = (x.l >>> shift) | (x.h << (32-shift));
+		    dst.h = (x.h >>> shift);
+		}
+
+		//Adds two 64-bit numbers
+		//Like the original implementation, does not rely on 32-bit operations
+		function int64add(dst, x, y)
+		{
+		   var w0 = (x.l & 0xffff) + (y.l & 0xffff);
+		   var w1 = (x.l >>> 16) + (y.l >>> 16) + (w0 >>> 16);
+		   var w2 = (x.h & 0xffff) + (y.h & 0xffff) + (w1 >>> 16);
+		   var w3 = (x.h >>> 16) + (y.h >>> 16) + (w2 >>> 16);
+		   dst.l = (w0 & 0xffff) | (w1 << 16);
+		   dst.h = (w2 & 0xffff) | (w3 << 16);
+		}
+
+		//Same, except with 4 addends. Works faster than adding them one by one.
+		function int64add4(dst, a, b, c, d)
+		{
+		   var w0 = (a.l & 0xffff) + (b.l & 0xffff) + (c.l & 0xffff) + (d.l & 0xffff);
+		   var w1 = (a.l >>> 16) + (b.l >>> 16) + (c.l >>> 16) + (d.l >>> 16) + (w0 >>> 16);
+		   var w2 = (a.h & 0xffff) + (b.h & 0xffff) + (c.h & 0xffff) + (d.h & 0xffff) + (w1 >>> 16);
+		   var w3 = (a.h >>> 16) + (b.h >>> 16) + (c.h >>> 16) + (d.h >>> 16) + (w2 >>> 16);
+		   dst.l = (w0 & 0xffff) | (w1 << 16);
+		   dst.h = (w2 & 0xffff) | (w3 << 16);
+		}
+
+		//Same, except with 5 addends
+		function int64add5(dst, a, b, c, d, e)
+		{
+		   var w0 = (a.l & 0xffff) + (b.l & 0xffff) + (c.l & 0xffff) + (d.l & 0xffff) + (e.l & 0xffff);
+		   var w1 = (a.l >>> 16) + (b.l >>> 16) + (c.l >>> 16) + (d.l >>> 16) + (e.l >>> 16) + (w0 >>> 16);
+		   var w2 = (a.h & 0xffff) + (b.h & 0xffff) + (c.h & 0xffff) + (d.h & 0xffff) + (e.h & 0xffff) + (w1 >>> 16);
+		   var w3 = (a.h >>> 16) + (b.h >>> 16) + (c.h >>> 16) + (d.h >>> 16) + (e.h >>> 16) + (w2 >>> 16);
+		   dst.l = (w0 & 0xffff) | (w1 << 16);
+		   dst.h = (w2 & 0xffff) | (w3 << 16);
+		}
+
+		/******************************************************************************/
+		/* END COPY & PASTE
+		/******************************************************************************/
+		/* SHA-512 implementation from sha512.js distributed under the BSD License
+		/* See <http://pajhome.org.uk/crypt/md5/sha512.html> for details.
+		/******************************************************************************/
+	/* ]]> */
+	</script>
+
+
+	<script type="text/javascript">
+	/* <![CDATA[ */
+		/**
+		 * Stores the genpw configuration
+		 *
+		 *
+		 * de: Speichert die genpw-Konfiguration
+		 *
+		 * @access public
+		 * @author Andreas Haerter <development@andreas-haerter.com>
+		 */
+		var cfg = {
+			/**
+			 * Salt to personalize the generator. You have to set this to make
+			 * genpw work.
+			 *
+			 * Only printable 7bit ASCII chars are allowed (=charcode 32 till
+			 * 126). This limit exists to exclude every thinkable compatibility
+			 * and/or codepage problem (think about non-UTF8 editors...).
+			 *
+			 * ATTENTION: If you change this, ALL generated password are new
+			 *            ones! Means you will get NEW results for the same
+			 *            input!
+			 *
+			 *
+			 * de: "Salz" um den Generator zu personalisieren, muss gesetzt
+			 *     werden. damit der Generator funktioniert.
+			 *
+			 * Nur druckbare 7bit ASCII-Zeichen erlaubt (=Zeichennummer 32 bis
+			 * 126). Diese Einschränkung existiert, um jedes denkbare
+			 * Kompatibilitäts- und/oder Codepage-Problem zu vermeiden (man
+			 * denke nur an nicht-UTF8-Editoren...).
+			 *
+			 * ACHTUNG: Falls Sie diesen Wert ändern, ändern sich auch ALLE
+			 *          generierten Passwörter, d.h. Sie erhalten bei gleichen
+			 *          Ausgangsdaten ANDERE Ergebnisse.
+			 *
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @link http://www.joelonsoftware.com/articles/Unicode.html
+			 */
+			salt: "",
+
+
+			/**
+			 * SHA512 hash of "your masterpassword"+"cfg.salt"
+			 *
+			 * You can store the hash within this value. If so, you will get
+			 * warned if there is a typo within your masterpassword as you
+			 * type. If you don't want to use this feature, you may set this
+			 * value to FALSE.
+			 
+			 * In PHP5 you can get the needed value with the following code:
+			 *   echo base64_encode(hash("sha512", <haystack>, true)); //STRIP ENDING "=" from the resulting string!
+			 * Or use JavaScript, e.g. copy and paste the following code
+			 * temporarily into this file to show it:
+			 *   alert(b64_sha512("your pwd here"+cfg.salt));
+			 *
+			 *
+			 * de: SHA512 hash von "Ihr Masterpasswort"+"cfg.salt"
+			 *
+			 * Sie können hier den Hash hinterlegen. So werden Sie direkt bei
+			 * der Eingabe gewarnt, sofern Sie sich bei der Eingabe Ihres
+			 * Masterpassworts vertippen. Sollte dies nicht gewünscht sein kann
+			 * der Wert einfach auf FALSE gesetzt werden.
+			 *
+			 * In PHP5 können Sie den Wert über den folgenden Code berechnen:
+			 *   echo base64_encode(hash("sha512", <haystack>, true)); //Das "=" am Ende der sich ergebenden Zeichenkette muss ENTFERT werden!
+			 * Oder nutzen Sie JavaScript. Sie können Sie sich den Wert z.B.
+			 * anzeigen lassen, indem Sie den folgenden Code temporär in diese
+			 * Datei einfügen:
+			 *   alert(b64_sha512("hier ihr pwd einfügen"+cfg.salt));
+			 *
+			 * @var false|string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			master_sha512: false,
+
+
+			/**
+			 * Seconds until the output field for generated pwds will be cleared
+			 *
+			 * This option gives you got the possibility to define a period in
+			 * seconds until the input field where the generated password are
+			 * written into will be cleared. However, the password can be
+			 * generated again trough a new click on "Generate".
+			 * This feature should prevent presenting a generated password in
+			 * clear text to someone who is standing next to you.
+			 * To disable it, simply set this value to FALSE.
+			 *
+			 *
+			 * de: Sekunden, bis das Ausgabefeld für generierte Passwörter
+			 * geleert wird
+			 *
+			 * Über diese Option können Sie eine Zeitspanne in Sekunden
+			 * festlegen, nach der genierte Passwörter aus dem entsprechenden
+			 * Eingabefeld gelöscht werden. Das Passwort kann natürlich sofort
+			 * durch einen Klick auf "Generieren" wieder erzeugt werden.
+			 * Dieses Feature hat das Ziel, zu verhindern, dass man fertig
+			 * generierte Passwörter jemanden präsentiert, der z.B. neben
+			 * einem steht.
+			 * Falls diese Funktion nicht genutzt werden soll, setzen Sie den
+			 * Wert einfach auf FALSE.
+			 *
+			 * @var false|integer
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			clearOutputTime: false,
+
+
+			/**
+			 * Language to use
+			 *
+			 *
+			 * de: Zu nutzende Sprache
+			 *
+			 * Available/Verfügbar:
+			 * - "auto" (the script tries to detect the language automatically,
+			 *           based on the current browser language)
+			 * - "de" (Deutsch/German)
+			 * - "en" (Englisch/English - will also be used as fallback if the
+			 *         given value is invalid or auto-detection does not work)
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			language: "auto",
+
+
+			/**
+			 * Default output length
+			 *
+			 * To get strong passwords, you should use at least 12 chars. 16
+			 * chars is a good value to prevent problems with too long passwords
+			 * (many services are limiting the password length to 16 chars).
+			 *
+			 *
+			 * de: Standard-Ausgabelänge
+			 *
+			 * Um starke Passwörter zu erhalten, sollten mindestens 12 Zeichen
+			 * genutzt werden. Um in der Praxis keine Probleme mit zu langen
+			 * Passwörtern zu bekommen (viele Dienste begrenzen die Länge) haben
+			 * sich 16 Zeichen bewährt.
+			 *
+			 * @var integer
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @see cfg::defaultOutputLength
+			 */
+			defaultOutputLength: 16,
+
+
+			/**
+			 * INTERNAL flag to check if cfg::check() was passed successfully
+			 *
+			 *
+			 * de: INTERNER Schalter um zu speichern, ob der Environment-Test
+			 * cfg::check() erfolgreich war
+			 *
+			 * @var boolean
+			 * @access private
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			_check_passed: false, //DO NOT TOUCH!
+
+
+			/**
+			 * Checks if we can use the generator/SHA-512 in the expected way
+			 *
+			 * In addition to a basic config check, this method also checks if
+			 * the file was stored with the correct codepage (UTF-8) and the
+			 * calling client is able to handle this codepage.
+			 *
+			 *
+			 * de: Prüft, ob wir den Generator und und die SHA-512 lib in der
+			 * erwarteten Art und Weise nutzen können.
+			 *
+			 * Neben der Konfiguration als solcher wird auch geprüft, ob die
+			 * Datei mit der richtigen Codepage (UTF-8) gespeichert ist und der
+			 * aufrufende Client richtig damit umgehen kann.
+			 *
+			 * @param boolean Flag to control if a notification via alert()
+			 *        should be suppress when things go wrong (=TRUE) or an
+			 *        alert() is OK (=FALSE, default).
+			 * @return boolean TRUE if all tests were passed and the environment
+			 *         is ready to go, FALSE in all other cases.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @uses cfg::salt
+			 * @uses cfg::_check_passed
+			 * @uses special_chars
+			 * @uses lang::cfg_check_envCheckFailed
+			 * @uses lang::cfg_check_cfgSaltInvalidLength
+			 * @uses lang::cfg_check_specCharPoolBroken
+			 * @uses lang::cfg_check_cfgSaltBroken
+			 * @uses lang::cfg_check_cfgMasterHashBroken
+			 * @uses lang::cfg_check_statusReady
+			 */
+			check: function(suppress_alert) {
+				if (//basic onboard test delivered by the used SHA-512 library
+				    !sha512_vm_test()
+				    //hex
+				    || hex_sha512("").toLowerCase() !=   "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce"
+				                                       + "47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
+				    || hex_sha512("Franz jagt im komplett verwahrlosten Taxi quer durch Bayern").toLowerCase() !==   "af9ed2de700433b803240a552b41b5a472a6ef3fe1431a722b2063c75e9f0745"
+				                                                                                                   + "1f67a28e37d09cde769424c96aea6f8971389db9e1993d6c565c3c71b855723c"
+				    || hex_sha512("Frank jagt im komplett verwahrlosten Taxi quer durch Bayern").toLowerCase() !==   "90b30ef9902ae4c4c691d2d78c2f8fa0aa785afbc5545286b310f68e91dd2299"
+				                                                                                                   + "c84a2484f0419fc5eaa7de598940799e1091c4948926ae1c9488dddae180bb80"
+				    || hex_sha512("abc123öäüß").toLowerCase() !=   "d55ee1e415ba7d60523e1a7cce1688d80c49c7404979c9f5ed5362e9c21f55e3" //test contains three German Umlauts suppress are UTF-8 multibyte chars - if this file is not encoded correctly, this would fail!
+				                                                 + "8924e53400f2dbd74fe3a077e9f9da57d85ca4c44e4ef5b0fd36f69246f3b818"
+				    //same with raw output, base64 encoded.
+				    //testvectors created with PHP5: base64_encode(hash("sha512", <haystack>, true));
+				    || b64_sha512("") !=   "z4PhNX7vuL3xVChQ1m2AB9Yg5AULVxXcg/SpIdNs6c5"
+				                         + "H0NE8XYXysP+DGNKHfuwvY7kxvUdBeoGlODJ6+SfaPg"
+				    || b64_sha512("Franz jagt im komplett verwahrlosten Taxi quer durch Bayern") !==   "r57S3nAEM7gDJApVK0G1pHKm7z/hQxpyKyBjx16fB0U"
+				                                                                                     + "fZ6KON9Cc3naUJMlq6m+JcTidueGZPWxWXDxxuFVyPA"
+				    || b64_sha512("Frank jagt im komplett verwahrlosten Taxi quer durch Bayern") !==   "kLMO+ZAq5MTGkdLXjC+PoKp4WvvFVFKGsxD2jpHdIpn"
+				                                                                                     + "ISiSE8EGfxeqn3lmJQHmeEJHElIkmrhyUiN3a4YC7gA"
+				    || b64_sha512("abc123öäüß") !=   "1V7h5BW6fWBSPhp8zhaI2AxJx0BJecn17VNi6cIfVeO" //test contains three German umlauts which are UTF-8 multibyte chars - if this file is not encoded correctly, this would fail!
+				                                   + "JJOU0APLb10/joHfp+dpX2FykxE5O9bD9NvaSRvO4GA") {
+					//something is wrong...
+					if (!suppress_alert) {
+						//inform user about it
+						alert(lang.cfg_check_envCheckFailed);
+					}
+					//break operation
+					return false;
+				} else {
+					//all right. if we are here, the SHA-512 lib works and we
+					//got no problems handling UTF-8. Check the current config.
+
+					//special char pools
+					//detect the fitting special char pool, stored as project property
+					for (var pool in special_chars) {
+						//jump over SHA512 control checksums properties
+						if (pool.substring(0, 7) === "sha512_") {
+							continue;
+						}
+						//check
+						if (hex_sha512(special_chars[pool]).toString() !== special_chars["sha512_"+pool].toString()) {
+							//something is wrong...
+							if (!suppress_alert) {
+								//inform user about it
+								alert(lang.cfg_check_specCharPoolBroken);
+							}
+							//break operation
+							return false;
+						}
+					}
+					//salt
+					if (parseInt(cfg.salt.length, 10) < 10
+					    || parseInt(cfg.salt.length, 10) > 1000) {
+						if (!suppress_alert) {
+							//inform user about it
+							alert(lang.cfg_check_cfgSaltInvalidLength);
+						}
+						return false;
+					}
+					for (var i=0; i < parseInt(cfg.salt.length, 10); i++) {
+						if (cfg.salt.charCodeAt(i) < 32         // 32 is " "
+						    || cfg.salt.charCodeAt(i) > 126) {  // 126 is "~"
+							//only printable 7bit ASCII is allowed - for compatibility reasons.
+							//better safe than sorry - all passwords would be lost if the salt
+							//is gone... which may happen when a wrong codepage and non-ASCII
+							//is used to store this file! With ASCII salt, the user can download
+							//genpw again + copy&paste his salt value to get a working genpw.
+							if (!suppress_alert) {
+								//inform user about it
+								alert(lang.cfg_check_cfgSaltBroken);
+							}
+							return false;
+						}
+					}
+					//master hash
+					if (cfg.master_sha512 !== false
+					    && cfg.master_sha512.length !== 86) {
+						if (!suppress_alert) {
+							//inform user about it
+							alert(lang.cfg_check_cfgMasterHashBroken);
+						}
+						return false;
+					}
+					//if we are here, everything seems to be fine
+					if (!suppress_alert) {
+						window.status = lang.cfg_check_statusReady;
+					}
+					//set control flag
+					cfg._check_passed = true;
+					return true;
+				}
+			}
+		};
+
+
+		/**
+		 * Encapsulates all data and functionality regarding the generator form
+		 *
+		 *
+		 * de: Kapselt alle Daten und Funktionalität bzgl. des
+		 * Generatorformulars
+		 *
+		 * @access public
+		 * @author Andreas Haerter <development@andreas-haerter.com>
+		 */
+		var generator_form = {
+			/**
+			 * ID of the input field to type the master password into
+			 *
+			 *
+			 * de: ID des input-Feldes in welches das Masterpasswort eingegeben
+			 * wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_master: "master",
+
+
+			/**
+			 * ID of the input field to type the pattern into
+			 *
+			 *
+			 * de: ID des input-Feldes in welches das Pattern/Muster eingegeben
+			 * wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_pattern: "pattern",
+
+
+			/**
+			 * ID of the input field to type the password length into
+			 *
+			 *
+			 * de: ID des input-Feldes in welches die Passwortlänge eingegeben
+			 * wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_pwdlen: "outputlength",
+
+
+			/**
+			 * ID of the select box to choose the password notation
+			 *
+			 *
+			 * de: ID der select-Box über welche die Schreibweise ausgewählt
+			 * werden kann
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_notation: "notation",
+
+
+			/**
+			 * ID of the input field to type the password length into
+			 *
+			 *
+			 * de: ID des input-Feldes in welches die Passwortlänge eingegeben
+			 * wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_result: "result",
+
+
+			/**
+			 * ID of the div/span element to write messages into
+			 *
+			 *
+			 * de: ID des div/span-Elements um Nachrichten hineinzuschreiben
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_messages: "messages",
+
+
+			/**
+			 * ID of the select box to choose the special chars pool (if so)
+			 *
+			 *
+			 * de: ID der select-Box um ggf. den Sonderzeichen-Pool auszuwählen
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_specchars: "specialchars",
+
+
+			/**
+			 * ID of the input field to type the min special char count into
+			 *
+			 *
+			 * de: ID des input-Feldes in welches die Mindestanzahl von
+			 * Sonderzeichen eingegeben wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_speccharsmin: "specialchars_min",
+
+
+			/**
+			 * ID of the input field to type the max percentage of special
+			 * chars into
+			 *
+			 * de: ID des input-Feldes in welches der max.
+			 * Sonderzeichenprozentsatz eingegeben wird
+			 *
+			 * @var string
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 */
+			id_speccharsmaxpercent: "specialchars_max_percent",
+
+
+			/**
+			 * Validates if the given master password was typed in correctly
+			 *
+			 * Works only, if cfg.master_sha512 was configured correctly.
+			 *
+			 *
+			 * de: Prüft, ob das gegebene Master-Passwort korrekt eingegeben
+			 * wurde
+			 *
+			 * Funktioniert nur, sofern cfg.master_sha512 ordentlich gesetzt
+			 * wurde.
+			 *
+			 * @param boolean Flag to control if a notification should be
+			 *        suppress when things go wrong (=TRUE) or an info is OK
+			 *        (=FALSE, default).
+			 * @return boolean|void TRUE if the password currently typed in is
+			 *         correct, FALSE if not. Nothing will be returned if
+			 *         cfg.master_sha512 was set to FALSE or there was no input
+			 *         within the master input field.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @uses cfg::master_sha512
+			 * @uses cfg::salt
+			 * @uses generator_form::id_master
+			 * @uses generator_form::id_messages
+			 * @uses cfg::_check_passed
+			 * @uses lang::generator_form_validateMaster_masterOk
+			 * @uses lang::generator_form_validateMaster_masterError
+			 */
+			validateMaster: function(suppress_alert)
+			{
+				//is this feature useable?
+				if (!cfg.master_sha512
+				    || !cfg._check_passed) {
+					return; //nope, break operation
+				}
+				//clean up eventually existing messages
+				var msgelement = document.getElementById(generator_form.id_messages);
+				msgelement.firstChild.nodeValue = "";
+
+				var master = document.getElementById(generator_form.id_master).value.toString();
+				if (master === "") {
+					return; //nothing to validate, break operation
+				}
+				if (cfg.master_sha512.toString() === b64_sha512(master + cfg.salt)) {
+
+					if (!suppress_alert) {
+						msgelement.firstChild.nodeValue = lang.generator_form_validateMaster_masterOk;
+						msgelement.className = "msg-success";
+					}
+					return true;
+
+				} else {
+
+					if (!suppress_alert) {
+						msgelement.firstChild.nodeValue = lang.generator_form_validateMaster_masterError;
+						msgelement.className = "msg-err";
+					}
+					return false;
+				}
+			},
+
+
+			/**
+			 * Initialises the form (sets focus, do checks and stuff like that)
+			 *
+			 *
+			 * de: Initialisiert das Formular (setzt den Fokus, führt Prüfungen
+			 * durch etc.)
+			 *
+			 * @return void Does its work silently.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @uses cfg::check()
+			 * @uses generator_form::id_master
+			 * @uses generator_form::id_result
+			 * @uses generator_form::id_specchars
+			 * @uses cfg::_check_passed
+			 */
+			init: function()
+			{
+				//check environment
+				cfg.check();
+
+				//clear output/result field (some browsers may cache the last
+				//value...)
+				document.getElementById(generator_form.id_result).value = "";
+
+				//focus master input for better usability
+				document.getElementById(generator_form.id_master).focus();
+
+				//handle special chars pool
+				var option = false;
+				var showname = "";
+				//detect the fitting special char pool, stored as project property
+				for (var pool in special_chars) {
+					//jump over SHA512 control checksums
+					if (pool.substring(0, 7) === "sha512_") {
+						continue;
+					}
+					//create showable name
+					showname = pool.replace(/[_]/g, " ");
+					if (special_chars[pool].length > 20) {
+						showname += ": " + special_chars[pool].substr(0, 4) + " … " //ATTENTION: "…" is NOT "..."
+						            + special_chars[pool].substr(-10);
+					} else {
+						showname += ": " + special_chars[pool];
+					}
+					//add option
+					option = document.createElement("option");
+					option.value = pool;
+					option.appendChild(document.createTextNode(showname));
+					document.getElementById(generator_form.id_specchars).appendChild(option);
+				}
+			},
+
+
+			/**
+			 * Strips chars from the beginning and end of a string
+			 *
+			 * Default: trim whitespace.
+			 *
+			 *
+			 * de: Entfernt Zeichen am Anfang und Ende eines Strings
+			 *
+			 * Standard: Entferne Whitespace.
+			 *
+			 * @param string The string that will be trimmed.
+			 * @param string (optional) Optionally, the stripped characters can
+			 *        also be specified using the charlist  parameter. Simply
+			 *        list all characters   that you want to be stripped. You
+			 *        are able to specify a range of characters with "..".
+			 * @return string This function returns a string with characters
+			 *         stripped from the beginning and end of str. Without the
+			 *         second parameter, trim() will strip these characters:
+			 *          \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000
+			 * @access public
+			 * @license MIT (http://kevin.vanzonneveld.net/techblog/article/phpjs_licensing/)
+			 * @author Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+			 * @link http://kevin.vanzonneveld.net/techblog/article/javascript_equivalent_for_phps_is_array/
+			 * @link http://www.php.net/manual/function.trim.php
+			 */
+			trim: function (p_str, p_charlist)
+			{
+				// http://kevin.vanzonneveld.net
+				// +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+				// +   improved by: mdsjack (http://www.mdsjack.bo.it)
+				// +   improved by: Alexander Ermolaev (http://snippets.dzone.com/user/AlexanderErmolaev)
+				// +      input by: Erkekjetter
+				// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+				// +      input by: DxGx
+				// +   improved by: Steven Levithan (http://blog.stevenlevithan.com)
+				// +    tweaked by: Jack
+				// +   bugfixed by: Onno Marsman
+				// *     example 1: trim('    Kevin van Zonneveld    ');
+				// *     returns 1: 'Kevin van Zonneveld'
+				// *     example 2: trim('Hello World', 'Hdle');
+				// *     returns 2: 'o Wor'
+				// *     example 3: trim(16, 1);
+				// *     returns 3: 6
+
+				var whitespace, l = 0, i = 0;
+				var str = String(p_str);
+
+				if (!p_charlist) {
+					// default list
+					whitespace = " \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000";
+				} else {
+					// preg_quote custom list
+					whitespace = String(p_charlist).replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\$1');
+				}
+
+				l = str.length;
+				for (i = 0; i < l; i++) {
+					if (whitespace.indexOf(str.charAt(i)) === -1) {
+						str = str.substring(i);
+						break;
+					}
+				}
+
+				l = str.length;
+				for (i = l - 1; i >= 0; i--) {
+					if (whitespace.indexOf(str.charAt(i)) === -1) {
+						str = str.substring(0, i + 1);
+						break;
+					}
+				}
+
+				return whitespace.indexOf(str.charAt(0)) === -1 ? str : "";
+			}
+		};
+
+
+		/**
+		 * Encapsulates all special char pools for the password generation
+		 *
+		 * ATTENTION: DO NOT CHANGE THE EXISTING POOLS/PROPERTIES IN *ANY* WAY,
+		 *            PASSWORDS WON'T BE THE SAME ANYMORE!
+		 *            If you need more/other special chars, add a whole new
+		 *            pool/property!
+		 *
+		 *
+		 * de: Kapselt Sonderzeichen-Pools für die Passwortgenerierung
+		 *
+		 * ACHTUNG: ÄNDERN SIE DIE EXISTIERENDEN POOLS/PROPERTIES IN *KEINER*
+		 *          WEISE, DIE GENERIERTEN PASSWÖRTER WÄREN NICHT MEHR DIE
+		 *          GLEICHEN! Falls sie mehr/andere Sonderzeichen, fügen Sie
+		 *          einen komplett neuen Pool bzw. ein neues Property hinzu!
+		 *
+		 * @access public
+		 * @author Andreas Haerter <development@andreas-haerter.com>
+		 */
+		var special_chars = {
+			//ATTENTION: DO NOT CHANGE THE FOLLOWING PROPERTIES IN *ANY* WAY,
+			//           PASSWORDS WON'T BE THE SAME ANYMORE!
+			//           If you need more/other special chars, add a whole new
+			//           property!
+
+			//ASCII based
+			ASCII_Basic: "!#$()-:;=[]_|",
+			ASCII_Variant1: "!#$%&()*+,-./:;<=>?@[]^_{|}~",
+			//UTF-8
+			UTF8_Variant1: "!#$%&()*+,-./:;<=>?@[]^_{|}~öäüßµ°¿»«¥€¢¤₣₤₧¹²³☺☻♂☼♀♠♣♥♦♪♫©®‰‡†",
+			UTF8_German_Keyboard: "!#$%&()*+,-./:;<=>?@[]^_{|}~öäüßµ°",
+
+			//SHA512 (hex) checksums of the stuff above
+			//ATTENTION: generator_form.init() ignores and cfg.check() checks
+			//           every property which's name starts with "sha512_".
+			sha512_ASCII_Basic: "a6092b96cfcd4ca937346e1bf5a59544fa9fa9c4d24e0cafa06ffa7fe3c32562592c6c070589ac90969c1223390ac225a295c3a6341401f7e320afbcd7b998f7",
+			sha512_ASCII_Variant1: "0ba10f8c79c3c17aeb56fc240d6752b097427e147e6910c336afc1bd12cdfd410890272a8bdca6b9f43cb349fc4a4393fe3673959146def0382a13cdb40febab",
+			sha512_UTF8_Variant1: "45d450af64aa62d58cde959e0ea95d961bd6260fe601a4a8b7b0f7a19fb0858c42455b8d892328658a7f300017300b1232be44feed0a2f6880ddb6919b9a8236",
+			sha512_UTF8_German_Keyboard: "878b41c20b7fd145d62c2cfe2aa8876b65e2d199d00c3d0e9deed1010f90dce98ef353fda15a8a1a52c026aa7ca5da8b10786b7630b8bf083f33c3cee7493779"
+		};
+
+
+		/**
+		 * Encapsulates all "generate password" data and functionality
+		 *
+		 *
+		 * de: Kapselt alle "Passwort genieren"-Daten und -Funktionalität
+		 *
+		 * @access public
+		 * @author Andreas Haerter <development@andreas-haerter.com>
+		 */
+		var generator = {
+			/**
+			 * Calcs the cross sum of a natural number
+			 *
+			 *
+			 * de: Berechnet die Quersumme einer natürlichen Zahl
+			 *
+			 * @param int|string The number to calc the cosssum of.
+			 * @return int|false The cross sum or FALSE if input was invalid.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @link http://de.wikipedia.org/wiki/Quersumme
+			 */
+			crossSum: function(number) {
+				//check
+				var number = number.toString();
+				if (!number.match(/\d+/g)) {
+					return false;
+				}
+				//calc
+				var interim  = Math.abs(number).toString();
+				var crossSum = 0;
+				for (var i = 0; i < interim.length; i++) {
+					crossSum += parseInt(interim.charAt(i), 10);
+				}
+				return parseInt(crossSum, 10);
+			},
+
+
+			/**
+			 * Replaces some chars of a string with special chars
+			 *
+			 *
+			 * de: Ersetzt einige Zeichen eines Strings mit Sonderzeichen
+			 *
+			 * @param string The string we have to work with.
+			 * @param int The number of special chars we have to insert into the
+			 *        string at least. Has to be >0 and <= length of the string.
+			 * @param int Maximal percentage of chars which are allowed to be
+			 *        replaced with special chars. If the given percent value is
+			 *        too small regarding the second param, it will be set to a
+			 *        value which fits the minimal value (the user will be
+			 *        informed about this via alert()).
+			 * @param string The pool of special chars we have to use.
+			 *        Available:
+			 *        - ASCII_basic
+			 *        - ascii_compatible (recommended)
+			 *        - utf8_1
+			 *        - utf8_keyboard_german
+			 * @return string|false The string or FALSE in case of errors.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @see special_chars::ASCII_basic
+			 * @see special_chars::ascii_compatible
+			 * @see special_chars::utf8_1
+			 * @see special_chars::utf8_keyboard_german
+			 * @uses generator_form::id_speccharsmaxpercent
+			 * @uses cfg::_check_passed
+			 * @uses lang::generator_strSpecialChars_maxPercentInvalid
+			 * @uses lang::generator_strSpecialChars_unknownPool
+			 * @uses lang::generator_strSpecialChars_maxMinPercentCorrection
+			 */
+			strSpecialChars: function(str, specchars_mincount, specchars_maxpercent, pool)
+			{
+				//environmental tests passed?
+				if (!cfg._check_passed) {
+					return false;
+				}
+
+				//general init
+				var output = "";
+				var strlen = parseInt(str.length, 10);
+
+				//handle max percents
+				if (specchars_maxpercent > 100) {
+					//warn user
+					alert(lang.generator_strSpecialChars_maxPercentInvalid);
+					//set max length
+					specialchars_max_percent = 100;
+					//correct input field
+					document.horst.specialchars_max_percent.value = 100;
+				}
+				//get nicer mathematical format: 100% = 1, 10% = 0.1 ...
+				specchars_maxpercent = Math.round(specchars_maxpercent) / 100;
+
+				//handle minimal charcount
+				if (specchars_mincount > (strlen * specchars_maxpercent)) {
+					//calc usable max limit
+					var used_max_percent = Math.ceil(specchars_mincount / (strlen / 100));
+					if (used_max_percent > 100) {
+						used_max_percent = 100;
+					}
+					//correct input field
+					document.getElementById(generator_form.id_speccharsmaxpercent).value = used_max_percent;
+					//inform user
+					alert(lang.generator_strSpecialChars_maxMinPercentCorrection);
+					//set value
+					specchars_maxpercent = used_max_percent / 100;
+				}
+
+				//special chars pool
+				pool = pool.toLowerCase();
+				var specchars = "";
+				//detect the fitting special char pool, stored as project property
+				for (var pool_name in special_chars) {
+					if (pool_name.toLowerCase() === pool) {
+						specchars = special_chars[pool_name].toString();
+						break;
+					}
+				}
+				if (specchars !== "") {
+					//every char twice to prevent problems. E.g it is a very
+					//implausible event if "0" (=first char) should be the
+					//result of our following method to chose a special char
+					specchars += specchars;
+				} else {
+					//inform user
+					alert(lang.generator_strSpecialChars_unknownPool + pool);
+					return false;
+				}
+				var speccharslen       = parseInt(specchars.length, 10);
+				var specchars_maxcount = Math.round(specchars_maxpercent * strlen);
+
+				//array to translate positions
+				var transtable       = [];
+				var transtable_count = 0; //we can' use transtable.length cause the highest
+				                          //index-number will be interpreted as .length. And
+				                          //we are using the array index to store the position
+				                          //where we have to replace the existing char within
+				                          //the string through the corresponding special char.
+
+				//let's work: fill up the "position -> special char" translation array
+				var interim_pos           = 0;
+				var interim_transtablekey = 0;
+				var interim_specialchar   = "";
+				for (var i = 1; (i <= strlen
+				                 || transtable_count < specchars_mincount); i++) {
+					//do we have enough special chars?
+					if (transtable_count >= specchars_maxcount) {
+						break; //no more work todo
+					}
+
+					// choose special char
+					//
+					//create a number > speccharslen, which depends on the round.
+					//and input. We are using this number as base for choosing a
+					//char through interpreting it as a position of the specialchar
+					//pool string.
+					interim_pos  = Math.round(i * specchars_mincount + speccharslen + i);
+					interim_pos += generator.crossSum(interim_pos);
+					if (str.charCodeAt(i) !== NaN) {
+						//Should be randomly enough: we using the randomness of the hash
+						//with str.charCodeAt(i)! NaN should be VERY implausible (cause
+						//this function should be finished before i > strlen) but better
+						//safe than sorry.
+						interim_pos += str.charCodeAt(i);
+					}
+					while (interim_pos > speccharslen) {
+						interim_pos -= speccharslen; //cut "overflow" until we got a number which is able to address a char of the specialchar pool
+					}
+					interim_specialchar = specchars.charAt(interim_pos); //store the specal chars
+
+					//Choose a replacement position on the input string
+					//
+					//create a number > strlen, which depends on the round and input.
+					//We are using this number as base for choosing a position of the
+					//input string where we have to replace the existing char through
+					//the determined special char.
+					interim_pos  = Math.round(i * specchars_mincount + strlen + i);
+					interim_pos += generator.crossSum(interim_pos);
+					if (str.charCodeAt(i) !== NaN) {
+						//Should be randomly enough: we using the randomness of the hash
+						//with str.charCodeAt(i)! NaN should be VERY implausible (cause
+						//this function should be finished before i > strlen) but better
+						//safe than sorry.
+						interim_pos += str.charCodeAt(i);
+					}
+					interim_transtablekey = 0;
+					while (interim_pos > strlen) {
+						interim_pos -= strlen; //cut "overflow" until we got a number which is able to address a char within of the input string
+					}
+					//check if we really found a new position or if we just overwriting
+					//stuff of a foregoing round
+					if (!transtable[interim_pos]) {
+						transtable_count++; //new special char and unused position, increase counter by one
+					}
+					transtable[interim_pos] = interim_specialchar; //store everyting within the array
+				}
+
+				//all right, now we have got a filled translation table. go through the
+				//input string and check every char if we have to replace it
+				for (var i = 0; i < strlen; i++) {
+					if (transtable[i]) {
+						output += transtable[i]; //use the choosen special char
+					} else {
+						output += str.charAt(i); //leave the original char, untouced
+					}
+				}
+
+				return output;
+			},
+
+
+			/**
+			 * Generates a password
+			 *
+			 *
+			 * de: Generiert ein Passwort
+			 *
+			 * @return void This function manipulates the form, no values
+			 *         returned.
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @uses generator_form::id_master
+			 * @uses generator_form::id_pattern
+			 * @uses generator_form::id_pwdlen
+			 * @uses generator_form::id_specchars
+			 * @uses generator_form::id_speccharsmin
+			 * @uses generator_form::id_speccharsmaxpercent
+			 * @uses generator_form::id_notation
+			 * @uses generator_form::trim()
+			 * @uses cfg::salt
+			 * @uses cfg::clearOutputTime
+			 * @uses cfg::_check_passed
+			 * @uses lang::generator_generatePwd_statusWorking
+			 * @uses lang::generator_generatePwd_statusReady
+			 * @uses lang::generator_unknownNotation
+			 */
+			generatePwd: function()
+			{
+				//environment tests passed?
+				if (!cfg._check_passed) {
+					return false;
+				}
+
+				//show status (may only be viewable at very slow machines)
+				window.status = lang.generator_generatePwd_statusWorking;
+
+				//inits
+				var output = "";
+
+				//read out nasic form values
+				var master       = document.getElementById(generator_form.id_master).value;
+				var pattern      = generator_form.trim(document.getElementById(generator_form.id_pattern).value);
+				var outputlength = Math.round(parseInt(document.getElementById(generator_form.id_pwdlen).value, 10));
+
+				//take care that the shown and the used values are really the same
+				document.getElementById(generator_form.id_pattern).value = pattern;
+				document.getElementById(generator_form.id_pwdlen).value  = outputlength;
+
+				//create the needed "raw" result string
+				var number  = outputlength;
+				var interim = "";
+				do {
+					interim += b64_sha512(master + ':' + pattern + ':' + number + ':' + cfg.salt).replace(/[\/\+=]/g, ""); //kill special chars which may are produced cause of the base64 encoding: /+=
+					number++;
+				} while (interim.length < outputlength); //make sure our result is long enough...
+				if (interim.length > outputlength) { //...but we also have to take care that it is not too long
+					for (var i = 0; i < outputlength; i++) {
+						output += interim.charAt(i); //leave the original char, untouced
+					}
+				} else {
+					output = interim;
+				}
+
+				//now we got the basic string. Insert special chars?
+				var specchars_select = document.getElementById(generator_form.id_specchars);
+				if (specchars_select[specchars_select.selectedIndex]
+				    && specchars_select[specchars_select.selectedIndex].value.toString() !== "") {
+					output = generator.strSpecialChars(//haystack
+					                                   output,
+					                                   //min count
+					                                   document.getElementById(generator_form.id_speccharsmin).value,
+					                                   //max percent
+					                                   document.getElementById(generator_form.id_speccharsmaxpercent).value,
+					                                   //pool
+					                                   specchars_select[specchars_select.selectedIndex].value);
+				}
+
+				//special notation?
+				var notation_select = document.getElementById(generator_form.id_notation);
+				if (notation_select[notation_select.selectedIndex]
+				    && notation_select[notation_select.selectedIndex].value.toString() !== "") {
+					if (notation_select[notation_select.selectedIndex].value.toString() === "upper") {
+						//upper case
+						output = output.toUpperCase();
+					} else if (notation_select[notation_select.selectedIndex].value.toString() === "lower") {
+						//lower case
+						output = output.toLowerCase();
+					} else {
+						//unknown, warn user
+						alert(lang.generator_unknownNotation +
+						      notation_select[notation_select.selectedIndex].value);
+					}
+				}
+
+				//write result into target input field
+				document.getElementById(generator_form.id_result).value = output;
+
+				//focus and mark content to make it ready for instant copy and paste
+				document.getElementById(generator_form.id_result).focus();
+				document.getElementById(generator_form.id_result).select();
+				window.status = lang.generator_generatePwd_statusReady;
+
+				//clean up the password after a defined period of time?
+				if (cfg.clearOutputTime > 0) {
+					window.setTimeout("document.getElementById(generator_form.id_result).value=''", (parseInt(cfg.clearOutputTime, 10) * 1000));
+				}
+			}
+		};
+
+		//try to auto detect language?
+		if (cfg.language == "auto") {
+			if (navigator.appName.toLowerCase() == "netscape") {
+				cfg.language = navigator.language;
+			} else {
+				cfg.language = navigator.browserLanguage;
+			}
+			if (!cfg.language
+			    || cfg.language == "") {
+				cfg.language = "auto";
+			}
+			cfg.language = cfg.language.toLowerCase();
+		}
+
+		if (cfg.language == "de") {
+			/**
+			 * German language values
+			 *
+			 * If you want to see your language here and you can translate the
+			 * current values, feel free to send me the translation via mail.
+			 *
+			 *
+			 * de: Deutsche Sprachwerte
+			 *
+			 * Falls Sie Ihre Sprache nutzen wollen und die vorhandenen Werte
+			 * übersetzen können, senden Sie mir die Übersetzung einfach per
+			 * E-Mail.
+			 *
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @see cfg.language
+			 */
+			var lang = {
+				//form
+				form_headline_enterBasicData: "Eingabe der Ausgangsdaten",
+				form_input_master: "Master",
+				form_input_pattern: "Muster",
+				form_headline_outputSettings: "Einstellungen bezüglich der Ausgabe",
+				form_input_length: "Länge",
+				form_input_notation: "Schreibweise",
+				form_input_notation_untouched: "Unverändert",
+				form_input_notation_uppercase: "Nur Großbuchstaben",
+				form_input_notation_lowercase: "Nur Kleinbuchstaben",
+				form_input_specialchars: "Sonderzeichen",
+				form_input_specialchars_none: "Keine",
+				form_input_specialchars_atleast: "Mind.",
+				form_input_specialchars_max: "Sonderzeichen, Maximal",
+				form_headline_output: "Ausgabe",
+				form_gerationResult: "Ergebnis der Generierung",
+				form_button_generate: "Generieren",
+				form_button_reset: "Reset",
+				//cfg.check()
+				cfg_check_envCheckFailed: "FEHLER: Es konnten nicht alle Environment-Tests erfolgreich abgeschlossen werden. Dies kann u.a. die folgenden Ursachen haben:\n- Ihr Browser verwendet eine veraltete JavaScript-Engine\n- Ihr Browser interpretiert das Dokumente mit der falschen\n  Codepage (UTF-8 wäre korrekt)\n- Die Datei wurde beschädigt\n- Die Datei wurde mit mit der falschen Codepage gespeichert\n  (UTF-8 wäre korrekt).\n\n",
+				cfg_check_cfgSaltInvalidLength: "cfg.salt muss min. 10 und darf max. 1000 Zeichen umfassen. Bitte passen Sie die Option an (s. Zeile 677).",
+				cfg_check_specCharPoolBroken: "FEHLER: Die Sonderzeichen-Pools wurden verändert!",
+				cfg_check_cfgSaltBroken: "Für cfg.salt sind nur druckbare Standard ASCII-Zeichen erlaubt, um zu verhindern, dass Zeichen verloren gehen wenn eine falsche Codepage zum speichern genutzt wird! Bitte passen Sie die Option an (s. Zeile 677).",
+				cfg_check_cfgMasterHashBroken: "cfg.master_sha512 muss ein SHA512-b64-Hash oder FALSE sein.",
+				cfg_check_statusReady: "Generator bereit",
+				//generator.generatePwd()
+				generator_generatePwd_statusWorking: "Generator arbeitet...",
+				generator_generatePwd_statusReady: "Generator bereit",
+				generator_unknownNotation: "WARNUNG:\nUnbekannte Schreibweise: ",
+				//generator.strSpecialChars()
+				generator_strSpecialChars_maxPercentInvalid: "WARNUNG:\nMehr als 100% Sonderzeichen sind als Maximalwert nicht moeglich. Es wird daher 100% als Miximalwert verwendet.",
+				generator_strSpecialChars_maxMinPercentCorrection: "WARNUNG:\nDie maximale Sonderzeichengrenze sind bei der aktuellen Mindestanzahl und der gewählten\nZeichenlänge nicht möglich. Der Prozentwert wird daher nach oben korrigiert.",
+				generator_strSpecialChars_unknownPool: "FEHLER:\nSonderzeichen-Pool unbekannt: ",
+				//generator_form.validateMaster()
+				generator_form_validateMaster_masterOk: "Master OK!",
+				generator_form_validateMaster_masterError: "Master nicht korrekt!"
+			};
+		} else {
+			/**
+			 * English language values
+			 *
+			 * Will also be used as fallback, if {@link cfg.language} got an
+			 * invalid value.
+			 *
+			 * If you want to see your language here and you can translate the
+			 * current values, feel free to send me the translation via mail.
+			 *
+			 *
+			 * de: Englische Sprachwerte
+			 *
+			 * Wird auch als Fallback genutzt, sofern {@link cfg.language} einen
+			 * ungültigen Wert hat.
+			 *
+			 * Falls Sie Ihre Sprache nutzen wollen und die vorhandenen Werte
+			 * übersetzen können, senden Sie mir die Übersetzung einfach per
+			 * E-Mail.
+			 *
+			 * @access public
+			 * @author Andreas Haerter <development@andreas-haerter.com>
+			 * @see cfg.language
+			 */
+			var lang = {
+				//form
+				form_headline_enterBasicData: "Enter basic data",
+				form_input_master: "Master",
+				form_input_pattern: "Pattern",
+				form_headline_outputSettings: "Output settings",
+				form_input_length: "Length",
+				form_input_notation: "Notation",
+				form_input_notation_untouched: "Untouched",
+				form_input_notation_uppercase: "Uppercase",
+				form_input_notation_lowercase: "Lowercase",
+				form_input_specialchars: "Specialchars",
+				form_input_specialchars_none: "None",
+				form_input_specialchars_atleast: "Min.",
+				form_input_specialchars_max: "specialchars, max",
+				form_headline_output: "Output",
+				form_gerationResult: "Generation result",
+				form_button_generate: "Generate",
+				form_button_reset: "Reset",
+				//cfg.check()
+				cfg_check_envCheckFailed: "ERROR: At least on of the environmental tests failed. This may happen if:\n- Your browser is using an old JavaScript engine\n- Your browser interprets the document with the wrong\n  codepage (UTF-8 would be correct)\n- The file is broken\n- The file was stored with a wrong codepage (UTF-8 would be\n  correct)\n\n",
+				cfg_check_cfgSaltInvalidLength: "cfg.salt has to have between 10 and 1000 chars. Please edit this option (see line 677).",
+				cfg_check_specCharPoolBroken: "ERROR: At least one of the special char pools was edited!",
+				cfg_check_cfgSaltBroken: "Only standard ASCII chars are allowed for the usage with cfg.salt to prevent losing chars if a wrong codepage is used for file storage. Please edit this option (see line 677).",
+				cfg_check_cfgMasterHashBroken: "cfg.master_sha512 has to be a SHA512-b64-Hash or FALSE.",
+				cfg_check_statusReady: "Generator ready",
+				//generator.generatePwd()
+				generator_generatePwd_statusWorking: "Generator is working...",
+				generator_generatePwd_statusReady: "Generator ready",
+				generator_unknownNotation: "WARNING:\nUnknown notation: ",
+				//generator.strSpecialChars()
+				generator_strSpecialChars_maxPercentInvalid: "WARNING:\nMore than 100% special characters are not possible. That\'s why 100% will be used as maximal value.",
+				generator_strSpecialChars_maxMinPercentCorrection: "WARNING:\nThe maximal specialchar limit is too low regarding the choosen result length and\nthe minimal specialchar count. That\'s why the maximum value will be corrected.",
+				generator_strSpecialChars_unknownPool: "ERROR:\nSpecial char pool unknown: ",
+				//generator_form.validateMaster()
+				generator_form_validateMaster_masterOk: "Master OK!",
+				generator_form_validateMaster_masterError: "Master invalid!"
+			};
+		}
+	/* ]]> */
+	</script>
+</head>
+
+<body>
+	<noscript>
+		<!-- we can't provide a JS translation here - you know: the NO in
+		     noscript ;-). Therefore the message is "hardcoded". -->
+		<p align="center">
+			<strong>WARNING:</strong>
+			This file needs active support for JavaScript 1.2 or higher to work
+			correctly. It seems that there is no support right now. So this file
+			will not work.
+		</p>
+		<p align="center">
+			<strong>ACHTUNG:</strong>
+			Diese Datei benötigt aktivierte Unterstützung für
+			JavaScript 1.2 oder höher. Derzeit scheint dies nicht der Fall zu
+			sein, diese Datei wird daher nicht funktionieren.
+		</p>
+	</noscript>
+	<form name="horst" method="post" action="" onsubmit="generator.generatePwd(); return false;">
+		<table cellpadding="3" cellspacing="4" align="center" summary="">
+			<tr>
+				<td class="headline colspan" colspan="2">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_headline_enterBasicData);
+					/* ]]> */
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_master);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<input id="master" type="password" style="width:290px;" onkeyup="generator_form.validateMaster();" onblur="generator_form.validateMaster();" onkeydown="if(event.keyCode==13) generator.generatePwd();" /> <!-- keycode 13 = ENTER -->
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_pattern);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<input id="pattern" type="text" style="width:290px;" onkeydown="if(event.keyCode==13) generator.generatePwd();" onblur="this.value=generator_form.trim(this.value);" /> <!-- keycode 13 = ENTER -->
+				</td>
+			</tr>
+			<tr>
+				<td class="headline colspan" colspan="2">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_headline_outputSettings);
+					/* ]]> */
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_length);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<input id="outputlength" type="text" style="width:290px;" onkeydown="if(event.keyCode==13) generator.generatePwd();" onblur="this.value=Math.round(parseInt(this.value, 10))" /> <!-- keycode 13 = ENTER -->
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.getElementById(generator_form.id_pwdlen).value = parseInt(cfg.defaultOutputLength, 10);
+					/* ]]> */
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_notation);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<select id="notation" style="width:290px;">
+						<option value="" selected="selected">
+							&#160;
+						</option>
+						<option value="upper">
+							&#160;
+						</option>
+						<option value="lower">
+							&#160;
+						</option>
+					</select>
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.getElementById(generator_form.id_notation)[0].firstChild.nodeValue = lang.form_input_notation_untouched;
+						document.getElementById(generator_form.id_notation)[1].firstChild.nodeValue = lang.form_input_notation_uppercase;
+						document.getElementById(generator_form.id_notation)[2].firstChild.nodeValue = lang.form_input_notation_lowercase;
+					/* ]]> */
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_specialchars);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<select id="specialchars" style="width:290px;">
+						<option value="" selected="selected">
+							&#160;
+						</option>
+					</select>
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.getElementById(generator_form.id_specchars)[0].firstChild.nodeValue = lang.form_input_specialchars_none;
+					/* ]]> */
+					</script>
+					<br />
+					<span style="line-height: 5px;">
+						<br />
+					</span>
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_specialchars_atleast);
+					/* ]]> */
+					</script>
+					<input id="specialchars_min" type="text" style="width:20px;" value="1" />
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_input_specialchars_max);
+					/* ]]> */
+					</script>
+					<input id="specialchars_max_percent" type="text" style="width:25px;" value="40" maxlength="3" />%
+				</td>
+			</tr>
+			<tr>
+				<td class="headline colspan" colspan="2">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_headline_output);
+					/* ]]> */
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.write(lang.form_gerationResult);
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<input id="result" type="text" style="width:290px;" />
+				</td>
+			</tr>
+			<tr>
+				<td class="left-col">
+					<input id="button_generate" type="button" name="generate" value="" onclick="generator.generatePwd();" />
+					&#160;&#160;
+					<input id="button_reset" type="reset" value="" onblur="if(document.getElementById(generator_form.id_pwdlen).value==''||document.getElementById(generator_form.id_pwdlen).value=='NaN'){document.getElementById(generator_form.id_pwdlen).value=parseInt(cfg.defaultOutputLength, 10);}" />
+					<script type="text/javascript">
+					/* <![CDATA[ */
+						document.getElementById("button_generate").value = lang.form_button_generate;
+						document.getElementById("button_reset").value    = lang.form_button_reset;
+					/* ]]> */
+					</script>
+				</td>
+				<td class="right-col">
+					<span id="messages">
+						&#160;
+					</span>
+				</td>
+			</tr>
+		</table>
+	</form>
+
+	<script type="text/javascript">
+	/* <![CDATA[ */
+		generator_form.init();
+	/* ]]> */
+	</script>
+</body>
+</html>
+
